@@ -5,7 +5,11 @@ manifest:
   projects:
     - name: zmk
       remote: zmkfirmware
-      revision: main
+      # Pinned to a pre-Zephyr-4.1 commit (2025-11-17). ZMK `main` migrated to the
+      # Zephyr 4.1 hardware model (Dec 2025), renaming boards and breaking the
+      # corneish_zen_v2_left/right names this config uses ("Invalid BOARD").
+      # This builds in the environment the config was written for.
+      revision: e34793e8c7193bc868b95ec38d78f67956f759cb
       import: app/west.yml
   self:
     path: config
