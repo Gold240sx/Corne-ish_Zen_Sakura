@@ -1,0 +1,175 @@
+#include <behaviors.dtsi>
+#include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/bt.h>
+
+// Sakura — Colemak port of qmk-config-piantor-sakura to the 36-key Corne-ish Zen.
+//
+// Layers
+#define BASE 0
+#define CODE 1
+#define NUM  2
+
+// MEH = Ctrl+Shift+Alt held (matches QMK MEH_T behavior).
+#define MEH LC(LS(LALT))
+
+// Key-position map (foostan_corne_5col_layout, 3x5 + 3):
+//   0  1  2  3  4      5  6  7  8  9
+//  10 11 12 13 14     15 16 17 18 19
+//  20 21 22 23 24     25 26 27 28 29
+//        30 31 32     33 34 35
+
+/ {
+    chosen {
+        // 36-key build. (6-col left commented for reference.)
+        zmk,physical-layout = &foostan_corne_5col_layout;
+        // zmk,physical-layout = &foostan_corne_6col_layout;
+    };
+
+    behaviors {
+        // tap = letter/symbol, hold = modifier or modified keycode.
+        // tap-preferred + 275ms mirrors the QMK config's TAPPING_TERM=275,
+        // which was set to stop accidental holds (e.g. "u" -> "-").
+        // Used for home-row mods and every QMK tap-dance whose hold is a keypress.
+        ht: hold_tap {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "tap-preferred";
+            tapping-term-ms = <275>;
+            quick-tap-ms = <175>;
+            bindings = <&kp>, <&kp>;
+        };
+
+        // Tap = language switch (Ctrl+Opt+Space); hold (400ms) = clear current BT profile.
+        // 400ms makes the destructive clear deliberate; a normal tap is always the switch.
+        // The hold side goes through the bt_clr macro because &bt needs two cells, which a
+        // hold-tap can't pass directly. The leading "0" in &lang_btclr 0 LC(LA(SPACE)) is an
+        // unused placeholder param for the macro side.
+        lang_btclr: lang_btclr {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "tap-preferred";
+            tapping-term-ms = <400>;
+            bindings = <&bt_clr>, <&kp>;
+        };
+    };
+
+    macros {
+        // Clear the currently-selected Bluetooth profile's pairing.
+        bt_clr: bt_clr {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_CLR>;
+        };
+    };
+
+    combos {
+        compatible = "zmk,combos";
+
+        // Both thumbs (NUM + CODE) -> language switch (Ctrl+Opt+Space, QMK was KC_LNG2).
+        combo_lang {
+            timeout-ms = <50>;
+            key-positions = <30 35>;
+            bindings = <&kp LC(LA(SPACE))>;
+        };
+
+        // Q + A + Z -> macOS swipe to previous desktop (Ctrl+Left).
+        combo_swipe_left {
+            timeout-ms = <50>;
+            key-positions = <0 10 20>;
+            bindings = <&kp LC(LEFT)>;
+        };
+
+        // > + O + < (right pinky column) -> swipe to next desktop (Ctrl+Right).
+        combo_swipe_right {
+            timeout-ms = <50>;
+            key-positions = <9 19 29>;
+            bindings = <&kp LC(RIGHT)>;
+        };
+
+        // Both thumbs + the "1" key (M / P1 / >) -> screenshot Shift+Cmd+1.
+        combo_screenshot_1 {
+            timeout-ms = <50>;
+            key-positions = <30 35 26>;
+            bindings = <&kp LS(LG(N1))>;
+        };
+
+        // Both thumbs + the "2" key (Bspc / P2 / ]) -> screenshot Shift+Cmd+2.
+        combo_screenshot_2 {
+            timeout-ms = <50>;
+            key-positions = <30 35 27>;
+            bindings = <&kp LS(LG(N2))>;
+        };
+
+        // Both thumbs + the "9" key (Y / P9 / \) -> screenshot Shift+Cmd+9.
+        combo_screenshot_9 {
+            timeout-ms = <50>;
+            key-positions = <30 35 8>;
+            bindings = <&kp LS(LG(N9))>;
+        };
+    };
+
+    keymap {
+        compatible = "zmk,keymap";
+
+        // -----------------------------------------------------------------------------------
+        // BASE (Colemak). Tap = letter; hold = mod / layer / symbol (see comments).
+        // | Q~  W   F_  P⌘/ GTab |   | JEsc L   U-  Y   >    |
+        // | A⌃  R⌥  S⌘  T⇧  Dcde |   | Hcde N⇧  E⌘  I⌥  O⌃   |
+        // | Z⌘z X⌘x C⌘c V⌘v Bnum |   | Knum M!  Bsp /_  <?   |
+        //            | NUM Spc: Ent↓ |   | ,Meh .= CODE |
+        // -----------------------------------------------------------------------------------
+        base_layer {
+            display-name = "Colemak";
+            bindings = <
+&ht TILDE Q   &kp W         &ht UNDER F   &ht LG(SLASH) P  &ht TAB G        &ht ESC J     &kp L         &ht MINUS U    &kp Y          &kp GT
+&ht LCTRL A   &ht LALT R    &ht LGUI S    &ht LSHFT T      &lt CODE D       &lt CODE H    &ht RSHFT N   &ht RGUI E     &ht RALT I     &ht RCTRL O
+&ht LG(Z) Z   &ht LG(X) X   &ht LG(C) C   &ht LG(V) V      &lt NUM B        &lt NUM K     &ht EXCL M    &kp BSPC       &ht UNDER FSLH &ht QMARK LT
+                                          &to NUM  &ht COLON SPACE  &ht DOWN RET    &ht MEH COMMA  &ht EQUAL DOT  &to CODE
+            >;
+        };
+
+        // -----------------------------------------------------------------------------------
+        // CODE — symbols & punctuation. Hold D or H, or tap the CODE thumb.
+        // |  #   @   $   (   -  |   |  +   )   &   \  Del |
+        // |  "   '   |   {      |   |      }   ;   /   `  |
+        // | %~   ^   [   <      |   |      >   ]   *  _Cap|
+        //            | BASE  -  - |   | -  -  BASE |
+        // -----------------------------------------------------------------------------------
+        code_layer {
+            display-name = "Code";
+            bindings = <
+&kp HASH        &kp AT     &kp DLLR   &kp LPAR   &kp MINUS    &kp PLUS    &kp RPAR   &kp AMPS   &kp BSLH   &kp DEL
+&kp DQT         &kp SQT    &kp PIPE   &kp LBRC   &trans       &trans      &kp RBRC   &kp SEMI   &kp FSLH   &kp GRAVE
+&ht TILDE PRCNT &kp CARET  &kp LBKT   &kp LT     &trans       &trans      &kp GT     &kp RBKT   &kp ASTRK  &ht CAPS UNDER
+                                      &to BASE   &trans       &trans      &trans     &trans     &to BASE
+            >;
+        };
+
+        // -----------------------------------------------------------------------------------
+        // NUM — numpad, media, nav + Bluetooth. Hold B or K, or tap the NUM thumb.
+        // | Mut V- V+  ↑   ←   |   |  →   7   8   9   %  |
+        // | Prv Pl Nx  ↓  BT0  |   | BT1  4   5   6   0  |
+        // | ⌘z ⌘x ⌘c  ⌘v  BT2  |   | Lng  1   2   3  $⌃␣ |
+        //            | BASE -  + |   | /  *  BASE |
+        // BT0–BT2 = select Bluetooth profile 0–2
+        // Lng = tap: language switch (Ctrl+Opt+Space) · hold 400ms: clear current BT pairing
+        // -----------------------------------------------------------------------------------
+        num_layer {
+            display-name = "Num";
+            bindings = <
+&kp C_MUTE    &kp C_VOL_DN  &kp C_VOL_UP  &kp UP        &kp LEFT        &kp RIGHT       &kp KP_N7   &kp KP_N8   &kp KP_N9   &kp PRCNT
+&kp C_PREV    &kp C_PP      &kp C_NEXT    &kp DOWN      &bt BT_SEL 0    &bt BT_SEL 1    &kp KP_N4   &kp KP_N5   &kp KP_N6   &kp KP_N0
+&ht LG(Z) Z   &ht LG(X) X   &ht LG(C) C   &ht LG(V) V   &bt BT_SEL 2    &lang_btclr 0 LC(LA(SPACE))   &kp KP_N1   &kp KP_N2   &kp KP_N3   &ht LC(SPACE) DLLR
+                                          &to BASE      &kp MINUS       &kp PLUS        &kp FSLH    &kp ASTRK   &to BASE
+            >;
+        };
+    };
+};
+
+// Layer-taps: make hold-to-reach-layer comfortable (balanced) without a long wait,
+// while keeping the 275ms term consistent with the home-row mods above.
+&lt {
+    flavor = "balanced";
+    tapping-term-ms = <275>;
+    quick-tap-ms = <175>;
+};

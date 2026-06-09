@@ -1,0 +1,12 @@
+build/
+zmk/
+zephyr/
+modules/
+tools/
+.west/
+
+# macOS
+.DS_Store
+._*
+Icon?
+.notebook/
