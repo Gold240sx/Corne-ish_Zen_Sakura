@@ -3,4 +3,7 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    # Pinned to match config/west.yml (pre-Zephyr-4.1, 2025-11-17). The @main
+    # workflow adds a "ZMK compat" check that hard-fails old-style boards like
+    # corneish_zen_v2_left/right even when the firmware compiles successfully.
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@e34793e8c7193bc868b95ec38d78f67956f759cb
